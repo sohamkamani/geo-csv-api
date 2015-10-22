@@ -1,9 +1,11 @@
 {
   "inFile" : "./sample.csv",
-  "outFile" : "./output.csv",
+  "outFile" : "./output2.csv",
   "address": "address",
   "lat": "lat",
   "lng": "lng",
-  "limit" : 100,
-  "logFolder" : "./logs"
+  "limit" : 5,
+  "logFolder" : "./logs",
+  "inDelimiter" : ",",
+  "outDelimiter" : ","
 }

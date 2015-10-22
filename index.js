@@ -14,9 +14,14 @@ var logger = new(winston.Logger)({
     })
   ]
 });
-logger.log('info', 'Hello distributed log files!');
-logger.info('Hello again distributed logs');
+// logger.log('info', 'Hello distributed log files!');
+// logger.info('Hello again distributed logs');
 
+//checking if output file exist
+// if(fs.existsSync(config.outFile)){
+//   logger.info('ERROR', 'File exists');
+//   throw new Error('File already exists');
+// }
 
 var arraysToObjects = function(data) {
   var title = data.shift();
@@ -44,7 +49,7 @@ var getAddressLatLng = function(address) {
         });
       }
       if (parsedData.results.length > 1) {
-        logger.info(parsedData.results);
+        logger.info('MORE THAN ONE RESULT',parsedData.results);
       }
       fullfilled(parsedData.results[0].geometry.location);
     });
@@ -52,36 +57,45 @@ var getAddressLatLng = function(address) {
 };
 
 var writeCsv = function(data) {
-  console.log('preparing...', data);
+  // logger.info('preparing...', data);
   var title = [config.address, config.lat, config.lng];
   arrayData = data.map(function(eachData) {
     return _.map(eachData);
   });
+  logger.info('Writing ', arrayData.length, 'records...');
   arrayData.unshift(title);
-  console.log('writing to csv...',arrayData);
-  csv.stringify(arrayData, function(err, data) {
-    console.log(data);
+  csv.stringify(arrayData, {delimiter: config.outDelimiter}, function(err, data) {
     fs.writeFile(config.outFile, data, function(err) {
       if (err) {
-        console.log(err);
+        logger.info(err);
       }
     });
   });
 };
+var isEmpty = function(data){
+    return isNaN(parseFloat(data))  || data === null || data === undefined;
+};
 
 var processCsv = function(data) {
   var objectifiedData = arraysToObjects(data);
-  console.log(objectifiedData);
-  var latLngRequests = objectifiedData.map(function(address) {
-    console.log(config.address, address[config.address]);
+  // logger.info(objectifiedData);
+  var latLngRequests = objectifiedData.map(function(address, i) {
+    if(i > config.limit -1){
+      return null;
+    }
+    // logger.info(config.address, address[config.address]);
     return getAddressLatLng(address.address);
   });
   Promise.all(latLngRequests)
     .then(function(latLngs) {
-      console.log('got lats and lngs',latLngs);
+      console.log(objectifiedData);
+      // logger.info('got lats and lngs',latLngs);
       latLngs.forEach(function(latLng, i) {
-        objectifiedData[i][config.lat] = latLng.lat;
-        objectifiedData[i][config.lng] = latLng.lng;
+        if(latLng === null){
+          return;
+        }
+        objectifiedData[i][config.lat] = isEmpty(objectifiedData[i][config.lat]) ? latLng.lat : objectifiedData[i][config.lat];
+        objectifiedData[i][config.lng] = isEmpty(objectifiedData[i][config.lng]) ? latLng.lng : objectifiedData[i][config.lng];
       });
       writeCsv(objectifiedData);
     });
@@ -91,7 +105,7 @@ var processCsv = function(data) {
 
 fs.readFile(config.inFile, function(err, data) {
   var csvString = data.toString();
-  csv.parse(csvString, function(err, data) {
+  csv.parse(csvString, {delimiter : config.inDelimiter}, function(err, data) {
     processCsv(data);
   });
 });
