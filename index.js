@@ -1,25 +1,22 @@
 var fs = require('fs'),
+path = require('path');
   csv = require('csv'),
   _ = require('lodash'),
   request = require('request'),
   winston = require('winston');
+  var config = require('./config.json');
 
 var logger = new(winston.Logger)({
   transports: [
     new(winston.transports.Console)(),
     new(winston.transports.File)({
-      filename: './somefile.log'
+      filename: path.resolve(config.logFolder, 'log' + (new Date()).toISOString())
     })
   ]
 });
 logger.log('info', 'Hello distributed log files!');
 logger.info('Hello again distributed logs');
 
-var config = {
-  address: 'address',
-  lat: 'lat',
-  lng: 'lng'
-};
 
 var arraysToObjects = function(data) {
   var title = data.shift();
@@ -64,7 +61,7 @@ var writeCsv = function(data) {
   console.log('writing to csv...',arrayData);
   csv.stringify(arrayData, function(err, data) {
     console.log(data);
-    fs.writeFile('output.csv', data, function(err) {
+    fs.writeFile(config.outFile, data, function(err) {
       if (err) {
         console.log(err);
       }
@@ -92,7 +89,7 @@ var processCsv = function(data) {
 };
 
 
-fs.readFile('./sample.csv', function(err, data) {
+fs.readFile(config.inFile, function(err, data) {
   var csvString = data.toString();
   csv.parse(csvString, function(err, data) {
     processCsv(data);

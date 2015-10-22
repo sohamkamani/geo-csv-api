@@ -1,0 +1,9 @@
+{
+  "inFile" : "./sample.csv",
+  "outFile" : "./output.csv",
+  "address": "address",
+  "lat": "lat",
+  "lng": "lng",
+  "limit" : 100,
+  "logFolder" : "./logs"
+}
